@@ -34,83 +34,15 @@ def filterIDs(directory, count):
 def loadSubpop(subpop, subPopDir, out_q, count, popSizeAll):
     """Subprocess, loads subpop with logical operators"""
     outDict = {}
-    while '  ' in subpop:
-        subpop = subpop.replace('  ',' ')
-    while subpop[0] == ' ':
-        subpop = subpop[1:]
-    while subpop[-1] == ' ':
-        subpop = subpop[:-1]
-    params = subpop.split(' ')
-    direct = True
-    if params == ["NOT","ANY"]:
-        print "Error: well that's not particularly useful, is it?"
-        loadType = "error"
-    while params[0] == "NOT":
-        direct = not direct
-        params = params[1:]
-    if len(params) == 1:
-        loadType = "normal"
-    elif len(params) == 2:
-        loadType = "error"
-        print "Error: 2 arguments found, 'NOT' expected as first parameter"
-    elif len(params) == 3:
-        if params[1] == "AND" or params[1] == "OR" or params[1] == "XOR":
-           loadType = params[1].lower()
-        else:
-            loadType = "error"
-            print "Error: 3 arguments found, 'AND' or 'OR' expected as second parameter"
-    else:
-        loadType = "error"
-        print "Error, no/ excess arguments found"
-    if loadType == "error":
+    
+    temp = filterIDs(subPopDir + subpop, count)
+    if temp == 'error':
         outDict[subpop] = 'error'
         print "Terminating process due to error"
     else:
-        if loadType == "normal":
-            if params[0] != 'ANY':
-                print "\tDirectly loading subpop", count, ":", params[0]
-                temp = filterIDs(subPopDir + params[0], count)
-                if temp == 'error':
-                    outDict[subpop] = 'error'
-                    print "Terminating process due to error"
-                else:
-                    outDict[subpop] = temp
-                    outDict[subpop + "_type"] = direct
-            else:
-                print "\tSubpop", count, ": 'ANY' specified, will pass values from general population"
-                outDict[subpop] = []
-                outDict[subpop + "_type"] = True
-        elif loadType == "and":
-            print "\tLoading intersection of subpops", count, ":", params[0], "and", params[2] 
-            temp = filterIDs(subPopDir + params[0], count)
-            temp2 = filterIDs(subPopDir + params[2], count)
-            if temp == 'error' or temp2 == 'error':
-                outDict[subpop] = 'error'
-                print "Terminating process due to error"
-            else:
-                outDict[subpop] = temp.intersection(temp2)
-                outDict[subpop + "_type"] = direct
-        elif loadType == "or":
-            print "\tLoading combined subpops", count, ':', params[0], "or", params[2] 
-            temp = filterIDs(subPopDir + params[0], count)
-            temp2 = filterIDs(subPopDir + params[2], count)
-            if temp == 'error' or temp2 == 'error':
-                outDict[subpop] = 'error'
-                print "Terminating process due to error"
-            else:
-                outDict[subpop] = temp.union(temp2)
-                outDict[subpop + "_type"] = direct
-        elif loadType == "xor":
-            print "\tLoading symmetric difference of subpops", count, ':', params[0], "xor", params[2] 
-            temp = filterIDs(subPopDir + params[0], count)
-            temp2 = filterIDs(subPopDir + params[2], count)
-            if temp == 'error' or temp2 == 'error':
-                outDict[subpop] = 'error'
-                print "Terminating process due to error"
-            else:
-                outDict[subpop] = temp.symmetric_difference(temp2)
-                outDict[subpop + "_type"] = direct        
-        
+        outDict[subpop] = temp
+        outDict[subpop + "_type"] = direct
+            
     print "\t\tLoad complete, returning subpop", count
 
     out_q.put(outDict)
