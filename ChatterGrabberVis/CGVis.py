@@ -119,14 +119,23 @@ def prepTweet(word):
     return listed
     
     
-def showWordCloud(text):
+def showWordCloud(text,title):
     plt.figure(figsize=(8,8)).gca()
-    fontPath = '/Library/Fonts/Microsoft/'
-    font = 'Verdana.ttf'
-    wc = WordCloud(background_color="white", max_words=2000,font_path=fontPath+font,stopwords=['ebola','link','atweeter','user'],
-                   height = 800, width = 800)
-    wc.generate(text)
+    try:
+	    fontPath = '/Library/Fonts/Microsoft/'
+	    font = 'Verdana.ttf'
+	    wc = WordCloud(background_color="white", max_words=2000,font_path=fontPath+font,stopwords=['ebola','link','atweeter','user'],
+		           height = 800, width = 800)
+	    wc.generate(text)
+    except:
+	    fontPath = '/usr/share/fonts/truetype/ubuntu-font-family'
+	    font = 'Ubuntu-L.ttf'
+	    wc = WordCloud(background_color="white", max_words=2000,stopwords=['ebola','link','atweeter','user','rt'],
+		           height = 800, width = 800)
+	    wc.generate(text)
+
     plt.imshow(wc)
+    plt.title(title)
     plt.axis("off")
     plt.show()
 
@@ -217,7 +226,8 @@ def getGeoSub(dataIn,box,prefix):
     
     
 def getCatSub(dataIn,cat,categories, catCol = 'NLPCat'):
-    dataOut = deepcopy(dataIn)
+    return getFieldSub(dataIn,[cat],[],"Cat %s" % cat,catCol)
+    """dataOut = deepcopy(dataIn)
     if type(categories) is dict:
         dataOut['name'] = categories[cat] + ' ' + dataOut['name']
     elif categories == '' or categories == 'null':
@@ -227,7 +237,7 @@ def getCatSub(dataIn,cat,categories, catCol = 'NLPCat'):
     data = dataOut['data']
     data = data[data[catCol] == cat]
     dataOut['data'] = data
-    return dataOut
+    return dataOut"""
     
     
 def getLocSub(dataIn,locNames,exclusions,prefix):
@@ -469,10 +479,10 @@ def countHashTags(data,number='all',freq=1):
         words = entry.split(' ')
         for word in words:
             if word.startswith('#'):
-                if word not in counts.keys():
-                    counts[word] = 1
+                if word.lower() not in counts.keys():
+                    counts[word.lower()] = 1
                 else:
-                    counts[word] += 1
+                    counts[word.lower()] += 1
     if type(freq) is int and freq != 1:
         counts = {key: value for key, value in counts.iteritems() if value >= freq}
     sortedCounts= sorted(counts.iteritems(), key=operator.itemgetter(-1))
@@ -939,12 +949,15 @@ def makeTimeLine(inFile,
         if not media.startswith('http') and str(media).lower() != 'false':
             media = 'https://'+media
             
-        series = row[sort]
+        series = str(row[sort])
         
         if sort == 'place':
-            series = str(series).split(', ')[-placeLevel]
+	    try:
+            	series = str(series).split(', ')[-placeLevel]
+	    except:
+		series = 'nan'
             
-        inKeep = ((series in keep) == (keepStyle == 'direct')) or keep == 'null'
+        inKeep = ((str(series) in keep) == (keepStyle == 'direct')) or keep == 'null'
         
         if embed == 'media':    
             html = "<img src='%s'>" % media
